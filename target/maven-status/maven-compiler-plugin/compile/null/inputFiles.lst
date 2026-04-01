@@ -1,0 +1,10 @@
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/CibSevenBasicAuthHeadersFactory.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/CibSevenFunctions.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/CibSevenRestClient.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/CompleteTaskRequestDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/ExternalTaskDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/FailureRequestDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/FetchAndLockRequestDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/TopicDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/cibs/dto/VariableValueDto.java
+/Users/mp/Documents/VSC-Projekte/Know-How/kogito/Kogito CIB Flow External Task Worker/src/main/java/de/cib/kogito/worker/service/ServiceExample.java

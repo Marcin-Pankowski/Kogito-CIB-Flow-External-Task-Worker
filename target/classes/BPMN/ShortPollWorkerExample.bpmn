@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ShortPollWorkerExample — polls CIB Seven every 5 seconds.
+
+  Timer fires every 5 s (R/PT5S), calls CibSevenFunctions.fetchAndLock(),
+  then fans out a call activity (ShortPollHandlerExample) for every returned task.
+-->
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:bpsim="http://www.bpsim.org/schemas/1.0" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:drools="http://www.jboss.org/drools" id="_ShortPollWorkerExample" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd http://www.omg.org/spec/DD/20100524/DC DC.xsd http://www.omg.org/spec/DD/20100524/DI DI.xsd " exporter="jBPM Process Modeler" exporterVersion="2.0" targetNamespace="http://www.omg.org/bpmn20">
+  <!-- activatedJobs holds the List<ExternalTaskDto> returned by fetchAndLock -->
+  <bpmn2:itemDefinition id="_activatedJobsItem" structureRef="java.util.List&lt;de.cib.kogito.worker.cibs.dto.ExternalTaskDto&gt;"/>
+  <!-- service task I/O type definitions -->
+  <bpmn2:itemDefinition id="_SPW_InMessageType" structureRef=""/>
+  <bpmn2:itemDefinition id="_SPW_OutMessageType" structureRef=""/>
+  <bpmn2:itemDefinition id="__SPW_topicNameInputXItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="__SPW_workerNameInputXItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="__SPW_maxJobsToActivateInputXItem" structureRef="Integer"/>
+  <bpmn2:itemDefinition id="__SPW_lockDurationMinutesInputXItem" structureRef="Integer"/>
+  <bpmn2:itemDefinition id="__SPW_activatedJobsOutputXItem" structureRef="Object"/>
+  <!-- multi-instance loop item type -->
+  <bpmn2:itemDefinition id="_SPW_multiInstanceItemType_activatedJob" structureRef="Object"/>
+  <bpmn2:message id="_SPW_InMessage" itemRef="_SPW_InMessageType"/>
+  <bpmn2:message id="_SPW_OutMessage" itemRef="_SPW_OutMessageType"/>
+  <!-- Interface pointing at CibSevenFunctions.fetchAndLock -->
+  <bpmn2:interface id="_SPW_ServiceInterface" name="de.cib.kogito.worker.cibs.CibSevenFunctions" implementationRef="de.cib.kogito.worker.cibs.CibSevenFunctions">
+    <bpmn2:operation id="_SPW_ServiceOperation" name="fetchAndLock" implementationRef="fetchAndLock">
+      <bpmn2:inMessageRef>_SPW_InMessage</bpmn2:inMessageRef>
+      <bpmn2:outMessageRef>_SPW_OutMessage</bpmn2:outMessageRef>
+    </bpmn2:operation>
+  </bpmn2:interface>
+  <bpmn2:collaboration id="_SPW_Collab" name="Default Collaboration">
+    <bpmn2:participant id="_SPW_Participant" name="Pool Participant" processRef="ShortPollWorkerExample"/>
+  </bpmn2:collaboration>
+  <bpmn2:process id="ShortPollWorkerExample" drools:packageName="de.cib.kogito.worker" drools:version="1.0" drools:adHoc="false" name="ShortPollWorkerExample" isExecutable="true" processType="Private">
+    <bpmn2:property id="activatedJobs" itemSubjectRef="_activatedJobsItem" name="activatedJobs">
+      <bpmn2:extensionElements>
+        <drools:metaData name="customTags"><drools:metaValue><![CDATA[internal]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:property>
+    <!-- sequence flows -->
+    <bpmn2:sequenceFlow id="_SPW_SF_0" sourceRef="_SPW_TimerStart" targetRef="_SPW_FetchAndLockTask"/>
+    <bpmn2:sequenceFlow id="_SPW_SF_1" sourceRef="_SPW_FetchAndLockTask" targetRef="_SPW_Gateway"/>
+    <bpmn2:sequenceFlow id="_SPW_SF_HasJobs" name="handle jobs" sourceRef="_SPW_Gateway" targetRef="_SPW_CallActivity">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[handle jobs]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java"><![CDATA[return activatedJobs.size()>0;]]></bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="_SPW_SF_NoJobs" name="no jobs to handle" sourceRef="_SPW_Gateway" targetRef="_SPW_EndNoJobs">
+      <bpmn2:extensionElements>
+        <drools:metaData name="isAutoConnection.target"><drools:metaValue><![CDATA[true]]></drools:metaValue></drools:metaData>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[no jobs to handle]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="_SPW_SF_2" sourceRef="_SPW_CallActivity" targetRef="_SPW_EndAllHandled"/>
+    <!-- Timer start: fires every 5 seconds -->
+    <bpmn2:startEvent id="_SPW_TimerStart" name="poll every 5 seconds">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[poll every 5 seconds]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_SPW_SF_0</bpmn2:outgoing>
+      <bpmn2:timerEventDefinition>
+        <bpmn2:timeCycle xsi:type="bpmn2:tFormalExpression" language="none">R/PT5S</bpmn2:timeCycle>
+      </bpmn2:timerEventDefinition>
+    </bpmn2:startEvent>
+    <!-- Service task: call CibSevenFunctions.fetchAndLock -->
+    <bpmn2:serviceTask id="_SPW_FetchAndLockTask" drools:serviceimplementation="Java" drools:serviceinterface="de.cib.kogito.worker.cibs.CibSevenFunctions" drools:serviceoperation="fetchAndLock" name="Fetch CIB Seven External Tasks" implementation="Java" operationRef="_SPW_ServiceOperation">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[Fetch CIB Seven External Tasks]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_SPW_SF_0</bpmn2:incoming>
+      <bpmn2:outgoing>_SPW_SF_1</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+        <bpmn2:dataInput id="_SPW_topicNameInputX" drools:dtype="String" itemSubjectRef="__SPW_topicNameInputXItem" name="topicName"/>
+        <bpmn2:dataInput id="_SPW_workerNameInputX" drools:dtype="String" itemSubjectRef="__SPW_workerNameInputXItem" name="workerName"/>
+        <bpmn2:dataInput id="_SPW_maxJobsToActivateInputX" drools:dtype="Integer" itemSubjectRef="__SPW_maxJobsToActivateInputXItem" name="maxJobsToActivate"/>
+        <bpmn2:dataInput id="_SPW_lockDurationMinutesInputX" drools:dtype="Integer" itemSubjectRef="__SPW_lockDurationMinutesInputXItem" name="lockDurationMinutes"/>
+        <bpmn2:dataOutput id="_SPW_activatedJobsOutputX" drools:dtype="Object" itemSubjectRef="__SPW_activatedJobsOutputXItem" name="activatedJobs"/>
+        <bpmn2:inputSet>
+          <bpmn2:dataInputRefs>_SPW_topicNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_SPW_workerNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_SPW_maxJobsToActivateInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_SPW_lockDurationMinutesInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet>
+          <bpmn2:dataOutputRefs>_SPW_activatedJobsOutputX</bpmn2:dataOutputRefs>
+        </bpmn2:outputSet>
+      </bpmn2:ioSpecification>
+      <!-- Hardcoded input assignments — adjust topic/worker as needed -->
+      <bpmn2:dataInputAssociation>
+        <bpmn2:targetRef>_SPW_topicNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment>
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression"><![CDATA[demo-topic]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression"><![CDATA[_SPW_topicNameInputX]]></bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:targetRef>_SPW_workerNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment>
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression"><![CDATA[kogito-cib-worker]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression"><![CDATA[_SPW_workerNameInputX]]></bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:targetRef>_SPW_maxJobsToActivateInputX</bpmn2:targetRef>
+        <bpmn2:assignment>
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression"><![CDATA[10]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression"><![CDATA[_SPW_maxJobsToActivateInputX]]></bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:targetRef>_SPW_lockDurationMinutesInputX</bpmn2:targetRef>
+        <bpmn2:assignment>
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression"><![CDATA[1]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression"><![CDATA[_SPW_lockDurationMinutesInputX]]></bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>_SPW_activatedJobsOutputX</bpmn2:sourceRef>
+        <bpmn2:targetRef>activatedJobs</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+    </bpmn2:serviceTask>
+    <!-- Gateway: any tasks returned? -->
+    <bpmn2:exclusiveGateway id="_SPW_Gateway" drools:dg="_SPW_SF_NoJobs" gatewayDirection="Diverging" default="_SPW_SF_NoJobs">
+      <bpmn2:incoming>_SPW_SF_1</bpmn2:incoming>
+      <bpmn2:outgoing>_SPW_SF_NoJobs</bpmn2:outgoing>
+      <bpmn2:outgoing>_SPW_SF_HasJobs</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <!-- Multi-instance call activity: one ShortPollHandlerExample instance per task -->
+    <bpmn2:callActivity id="_SPW_CallActivity" drools:independent="false" drools:waitForCompletion="true" name="JobHandler" calledElement="ShortPollHandlerExample">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[JobHandler]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_SPW_SF_HasJobs</bpmn2:incoming>
+      <bpmn2:outgoing>_SPW_SF_2</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+        <bpmn2:dataInput id="_SPW_CA_IN_COLLECTIONInputX" itemSubjectRef="_activatedJobsItem" name="IN_COLLECTION"/>
+        <bpmn2:dataInput id="_SPW_CA_activatedJobInputX" itemSubjectRef="_SPW_multiInstanceItemType_activatedJob" name="activatedJob"/>
+        <bpmn2:inputSet>
+          <bpmn2:dataInputRefs>_SPW_CA_IN_COLLECTIONInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_SPW_CA_activatedJobInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:sourceRef>activatedJobs</bpmn2:sourceRef>
+        <bpmn2:targetRef>_SPW_CA_IN_COLLECTIONInputX</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:sourceRef>activatedJob</bpmn2:sourceRef>
+        <bpmn2:targetRef>_SPW_CA_activatedJobInputX</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:multiInstanceLoopCharacteristics>
+        <bpmn2:loopDataInputRef>_SPW_CA_IN_COLLECTIONInputX</bpmn2:loopDataInputRef>
+        <bpmn2:inputDataItem id="activatedJob" itemSubjectRef="_SPW_multiInstanceItemType_activatedJob" name="activatedJob"/>
+      </bpmn2:multiInstanceLoopCharacteristics>
+    </bpmn2:callActivity>
+    <bpmn2:endEvent id="_SPW_EndNoJobs" name="no jobs to handle">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[no jobs to handle]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_SPW_SF_NoJobs</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:endEvent id="_SPW_EndAllHandled" name="all jobs handled">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname"><drools:metaValue><![CDATA[all jobs handled]]></drools:metaValue></drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_SPW_SF_2</bpmn2:incoming>
+    </bpmn2:endEvent>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram>
+    <bpmndi:BPMNPlane bpmnElement="ShortPollWorkerExample">
+      <bpmndi:BPMNShape id="shape__SPW_TimerStart" bpmnElement="_SPW_TimerStart">
+        <dc:Bounds height="56" width="56" x="160" y="217"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__SPW_FetchAndLockTask" bpmnElement="_SPW_FetchAndLockTask">
+        <dc:Bounds height="102" width="154" x="280" y="194"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__SPW_Gateway" bpmnElement="_SPW_Gateway">
+        <dc:Bounds height="56" width="56" x="510" y="217"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__SPW_CallActivity" bpmnElement="_SPW_CallActivity">
+        <dc:Bounds height="102" width="154" x="640" y="194"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__SPW_EndAllHandled" bpmnElement="_SPW_EndAllHandled">
+        <dc:Bounds height="56" width="56" x="870" y="217"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__SPW_EndNoJobs" bpmnElement="_SPW_EndNoJobs">
+        <dc:Bounds height="56" width="56" x="640" y="370"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge__SPW_SF_0" bpmnElement="_SPW_SF_0">
+        <di:waypoint x="216" y="245"/>
+        <di:waypoint x="280" y="245"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge__SPW_SF_1" bpmnElement="_SPW_SF_1">
+        <di:waypoint x="434" y="245"/>
+        <di:waypoint x="510" y="245"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge__SPW_SF_HasJobs" bpmnElement="_SPW_SF_HasJobs">
+        <di:waypoint x="566" y="245"/>
+        <di:waypoint x="640" y="245"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge__SPW_SF_NoJobs" bpmnElement="_SPW_SF_NoJobs">
+        <di:waypoint x="538" y="245"/>
+        <di:waypoint x="538" y="398"/>
+        <di:waypoint x="640" y="398"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge__SPW_SF_2" bpmnElement="_SPW_SF_2">
+        <di:waypoint x="794" y="245"/>
+        <di:waypoint x="870" y="245"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>

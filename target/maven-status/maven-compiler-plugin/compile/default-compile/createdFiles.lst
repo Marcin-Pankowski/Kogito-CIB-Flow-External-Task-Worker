@@ -1,0 +1,9 @@
+de/cib/kogito/worker/service/ServiceExample.class
+de/cib/kogito/worker/cibs/dto/FetchAndLockRequestDto.class
+de/cib/kogito/worker/cibs/dto/TopicDto.class
+de/cib/kogito/worker/cibs/dto/VariableValueDto.class
+de/cib/kogito/worker/cibs/dto/FailureRequestDto.class
+de/cib/kogito/worker/cibs/dto/CompleteTaskRequestDto.class
+de/cib/kogito/worker/cibs/dto/ExternalTaskDto.class
+de/cib/kogito/worker/cibs/CibSevenFunctions.class
+de/cib/kogito/worker/cibs/CibSevenRestClient.class
