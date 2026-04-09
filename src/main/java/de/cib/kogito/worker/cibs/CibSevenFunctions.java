@@ -82,7 +82,7 @@ public class CibSevenFunctions {
         restClient.complete(taskId, request);
 
         Log.infof("Completed external task: %s", taskId);
-        Log.info("CIB Seven Task Fullfilled");
+        Log.info("CIB Seven Task fulfilled");
     }
 
     /**
